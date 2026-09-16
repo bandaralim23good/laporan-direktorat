@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+model PpkReport {
+  id        Int      @id @default(autoincrement())
+  month     Int
+  year      Int
+
+  ppk       Float?
+  qhs       Float?
+  targetPpk Float?
+  targetQhs Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, month])
+} 
+
+model PpkProductReport {
+  id        Int      @id @default(autoincrement())
+  year      Int
+  month     Int
+
+  pentolPpk   Float?
+  pentolQhs   Float?
+
+  lumpiaPpk   Float?
+  lumpiaQhs   Float?
+
+  apPpk       Float?
+  apQhs       Float?
+
+  ukPpk       Float?
+  ukQhs       Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, month])
+}
+
+model QamReport {
+  id Int @id @default(autoincrement())
+
+  year Int
+  month Int
+
+  qam       Float?
+  qhs       Float?
+  targetQam Float?
+  targetQhs Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, month], name: "year_month")
+}
+
+model QamProductReport {
+  id Int @id @default(autoincrement())
+
+  year Int
+  month Int
+
+  pentolQam Float?
+  pentolQhs Float?
+
+  lumpiaQam Float?
+  lumpiaQhs Float?
+
+  apQam Float?
+  apQhs Float?
+
+  ukQam Float?
+  ukQhs Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, month], name: "year_month")
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
