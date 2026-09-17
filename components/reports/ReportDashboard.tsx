@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import ReportFilter from "./ReportFilter";
 import PpkReportTable from "./PpkReportTable";
 import QamReportTable from "./QamReportTable";
@@ -91,47 +92,189 @@ export default function ReportDashboard() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number | "all">("all");
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+
+  async function fetchReports() {
+    try {
+      const responses = await Promise.all([
+        fetch("/api/reports/ppk"),
+        fetch("/api/reports/ppk-products"),
+        fetch("/api/reports/qam"),
+        fetch("/api/reports/qam-products"),
+      ]);
+
+      const [
+        ppkResponse,
+        ppkProductResponse,
+        qamResponse,
+        qamProductResponse,
+      ] = responses;
+
+      console.log("PPK:", ppkResponse.status, ppkResponse.url);
+      console.log(
+        "PPK Product:",
+        ppkProductResponse.status,
+        ppkProductResponse.url
+      );
+      console.log("QAM:", qamResponse.status, qamResponse.url);
+      console.log(
+        "QAM Product:",
+        qamProductResponse.status,
+        qamProductResponse.url
+      );
+
+      if (!ppkResponse.ok) {
+        throw new Error(
+          `API PPK gagal: ${ppkResponse.status} ${ppkResponse.statusText}`
+        );
+      }
+
+      if (!ppkProductResponse.ok) {
+        throw new Error(
+          `API PPK Product gagal: ${ppkProductResponse.status} ${ppkProductResponse.statusText}`
+        );
+      }
+
+      if (!qamResponse.ok) {
+        throw new Error(
+          `API QAM gagal: ${qamResponse.status} ${qamResponse.statusText}`
+        );
+      }
+
+      if (!qamProductResponse.ok) {
+        throw new Error(
+          `API QAM Product gagal: ${qamProductResponse.status} ${qamProductResponse.statusText}`
+        );
+      }
+
+      const [
+        ppkData,
+        ppkProductData,
+        qamData,
+        qamProductData,
+      ] = await Promise.all([
+        ppkResponse.json(),
+        ppkProductResponse.json(),
+        qamResponse.json(),
+        qamProductResponse.json(),
+      ]);
+
+      if (!Array.isArray(ppkData)) {
+        throw new Error("Response API PPK bukan array");
+      }
+
+      if (!Array.isArray(ppkProductData)) {
+        throw new Error("Response API PPK Product bukan array");
+      }
+
+      if (!Array.isArray(qamData)) {
+        throw new Error("Response API QAM bukan array");
+      }
+
+      if (!Array.isArray(qamProductData)) {
+        throw new Error("Response API QAM Product bukan array");
+      }
+
+      setPpk(ppkData);
+      setPpkProducts(ppkProductData);
+      setQam(qamData);
+      setQamProducts(qamProductData);
+    } catch (error) {
+      console.error("Gagal mengambil data laporan:", error);
+      throw error;
+    }
+  }
 
   useEffect(() => {
-    async function fetchReports() {
+    async function loadInitialData() {
       try {
-        const [
-          ppkResponse,
-          ppkProductResponse,
-          qamResponse,
-          qamProductResponse,
-        ] = await Promise.all([
-          fetch("/api/reports/ppk"),
-          fetch("/api/reports/ppk-products"),
-          fetch("/api/reports/qam"),
-          fetch("/api/reports/qam-products"),
-        ]);
 
-        const [
-          ppkData,
-          ppkProductData,
-          qamData,
-          qamProductData,
-        ] = await Promise.all([
-          ppkResponse.json(),
-          ppkProductResponse.json(),
-          qamResponse.json(),
-          qamProductResponse.json(),
-        ]);
-
-        setPpk(ppkData);
-        setPpkProducts(ppkProductData);
-        setQam(qamData);
-        setQamProducts(qamProductData);
-      } catch (error) {
-        console.error("Gagal mengambil data laporan:", error);
+        await fetchReports();
+        toast.success("Data berhasil diperbarui", {
+          description: "Data Spreadsheet sudah berhasil disinkronkan ke sistem.",
+        });
+      } catch {
+        // Error sudah ditampilkan di console
       } finally {
         setLoading(false);
       }
     }
 
-    fetchReports();
+    loadInitialData();
   }, []);
+
+  async function handleSyncData() {
+    if (syncing) return;
+
+    try {
+      setSyncing(true);
+
+      const [
+        ppkSyncResponse,
+        ppkProductSyncResponse,
+        qamSyncResponse,
+        qamProductSyncResponse,
+      ] = await Promise.all([
+        fetch("/api/spreadsheet/ppk/sync"),
+        fetch("/api/spreadsheet/ppk-product/sync"),
+        fetch("/api/spreadsheet/qam/sync"),
+        fetch("/api/spreadsheet/qam-product/sync"),
+      ]);
+
+      const [
+        ppkSyncData,
+        ppkProductSyncData,
+        qamSyncData,
+        qamProductSyncData,
+      ] = await Promise.all([
+        ppkSyncResponse.json(),
+        ppkProductSyncResponse.json(),
+        qamSyncResponse.json(),
+        qamProductSyncResponse.json(),
+      ]);
+
+      if (!ppkSyncResponse.ok) {
+        throw new Error(ppkSyncData.error || "Sync PPK gagal");
+      }
+
+      if (!ppkProductSyncResponse.ok) {
+        throw new Error(
+          ppkProductSyncData.error || "Sync PPK per produk gagal"
+        );
+      }
+
+      if (!qamSyncResponse.ok) {
+        throw new Error(qamSyncData.error || "Sync QAM gagal");
+      }
+
+      if (!qamProductSyncResponse.ok) {
+        throw new Error(
+          qamProductSyncData.error || "Sync QAM per produk gagal"
+        );
+      }
+
+      // Sync berhasil.
+      // TIDAK PEDULI ada data baru atau tidak.
+      toast.success("Update data berhasil", {
+        description: "Data Spreadsheet berhasil disinkronkan ke Neon.",
+      });
+
+      // Refresh data laporan
+      await fetchReports();
+
+    } catch (error) {
+      console.error("Gagal update data:", error);
+
+      toast.error("Update data gagal", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Gagal memperbarui data.",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
   const years = Array.from(
     new Set([
       ...ppk.map((item) => item.year),
@@ -214,18 +357,39 @@ export default function ReportDashboard() {
       <div className="mx-auto max-w-7xl px-6 py-8">
 
         {/* HEADER */}
-        <div className="mb-8">
-          <p className="text-sm font-semibold uppercase tracking-wider text-teal-600">
-            Direktorat Report
-          </p>
+        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wider text-teal-600">
+              Direktorat Report
+            </p>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-            Laporan QAM & PPK
-          </h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+              Laporan QAM & PPK
+            </h1>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Monitoring performa PPK dan QAM berdasarkan periode bulan dan produk.
-          </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Monitoring performa PPK dan QAM berdasarkan periode bulan dan produk.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSyncData}
+            disabled={syncing}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {syncing ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                Memperbarui...
+              </>
+            ) : (
+              <>
+                ↻
+                Update Data
+              </>
+            )}
+          </button>
         </div>
         <ReportFilter
           year={selectedYear}
