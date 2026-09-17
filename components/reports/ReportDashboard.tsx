@@ -224,7 +224,7 @@ export default function ReportDashboard() {
           </h1>
 
           <p className="mt-2 text-sm text-slate-500">
-            Monitoring performa PPK dan QAM berdasarkan periode dan produk.
+            Monitoring performa PPK dan QAM berdasarkan periode bulan dan produk.
           </p>
         </div>
         <ReportFilter
