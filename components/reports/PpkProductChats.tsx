@@ -105,12 +105,12 @@ export default function PpkProductChart({
             qhsKey: "lumpiaQhs" as const,
         },
         {
-            title: "AP",
+            title: "Adonan Pangsit",
             ppkKey: "apPpk" as const,
             qhsKey: "apQhs" as const,
         },
         {
-            title: "UK",
+            title: "Udang Keju",
             ppkKey: "ukPpk" as const,
             qhsKey: "ukQhs" as const,
         },

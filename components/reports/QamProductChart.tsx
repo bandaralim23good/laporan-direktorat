@@ -83,12 +83,12 @@ export default function QamProductChart({
             qhsKey: "lumpiaQhs" as const,
         },
         {
-            title: "AP",
+            title: "Adonan Pangsit",
             qamKey: "apQam" as const,
             qhsKey: "apQhs" as const,
         },
         {
-            title: "UK",
+            title: "Udang Keju",
             qamKey: "ukQam" as const,
             qhsKey: "ukQhs" as const,
         },

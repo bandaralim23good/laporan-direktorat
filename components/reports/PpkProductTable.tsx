@@ -83,14 +83,14 @@ export default function PpkProductTable({
                   colSpan={2}
                   className="pb-3 text-center font-semibold text-slate-600"
                 >
-                  AP
+                  Adonan Pangsit
                 </th>
 
                 <th
                   colSpan={2}
                   className="pb-3 text-center font-semibold text-slate-600"
                 >
-                  UK
+                  Udang Keju
                 </th>
               </tr>
 
