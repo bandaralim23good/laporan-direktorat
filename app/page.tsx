@@ -5,7 +5,7 @@ const reportMenus = [
     title: "PPK & QAM Report",
     description:
       "Laporan performa dan pencapaian PPK berdasarkan data produk dan periode.",
-    href: "/ppk-report",
+    href: "/reports",
     code: "PPK",
   },
   // {
